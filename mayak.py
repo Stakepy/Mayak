@@ -5,6 +5,7 @@ import asyncio
 import datetime
 import requests
 import sqlite3
+from db import init_db
 
 conn = sqlite3.connect("users.db")  # или путь к твоей базе, если он другой
 cur = conn.cursor()
@@ -28,6 +29,7 @@ voice_client = None
 @bot.event
 async def on_ready():
     print(f"✅ Запущен как {bot.user}")
+
     await tree.sync(guild=discord.Object(id=GUILD_ID))
     init_db()
 
@@ -88,7 +90,7 @@ async def remove_city(interaction: discord.Interaction):
 
     # Удаляем информацию о городе и стране
     remove_user_city(interaction.user.id)
-    await interaction.response.send_message("✅ Ваши данные о городе и стране удалены. Вы больше не будете получать погоду.", ephemeral=True)
+    await interaction.response.send_message("✅ Ваши данные о городе и стране удалены. Вы больше не будете получать информацию о погодe.", ephemeral=True)
 
 # Команда: текущая погода
 @tree.command(name="weather", description="Показать текущую погоду", guild=discord.Object(id=GUILD_ID))
@@ -104,7 +106,7 @@ async def show_weather(interaction: discord.Interaction):
 
     forecast = await get_weather(city, country)
     await play_sound()
-    await interaction.response.send_message(f"📡 Погода для **{city}, {country}**:\n{forecast}", ephemeral=True)
+    await interaction.response.send_message(f"🗼 Погода для **{city}, {country}**:\n{forecast}", ephemeral=True)
 
 # Отправка прогноза каждый час
 @tasks.loop(seconds=1)

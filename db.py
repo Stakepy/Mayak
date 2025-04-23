@@ -1,6 +1,12 @@
 import sqlite3
 from tabulate import tabulate
 
+def remove_user_city(user_id: int):
+    cur.execute("UPDATE users SET city = NULL, country = NULL WHERE user_id = ?", (user_id,))
+    conn.commit()
+    
+    conn.close()
+
 conn = sqlite3.connect("users.db")
 cur = conn.cursor()
 
