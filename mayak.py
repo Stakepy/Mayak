@@ -16,7 +16,7 @@ conn.close()
 print("Готово!")
 
 from config import TOKEN, GUILD_ID, VOICE_CHANNEL_ID, TEXT_CHANNEL_ID, MP3_FILE, OPENWEATHERMAP_API_KEY
-from db import init_db, set_user_city, get_user_city, get_all_users
+from db import init_db, set_user_city, get_user_city, get_all_users, remove_user_city
 from weather import get_weather
 
 intents = discord.Intents.all()
@@ -79,6 +79,16 @@ async def set_city(interaction: discord.Interaction, city: str, country: str):
     set_user_city(interaction.user.id, city, country)  # Теперь работает с тремя аргументами
     await interaction.response.send_message(f"✅ Ваш город установлен как **{city}, {country}**.", ephemeral=True)
 
+# Команда: удалить город и страну
+@tree.command(name="remove", description="Удалить город и страну", guild=discord.Object(id=GUILD_ID))
+async def remove_city(interaction: discord.Interaction):
+    if not is_in_designated_text_channel(interaction):
+        await interaction.response.send_message("❌ Вы можете использовать эту команду только в указанном текстовом канале.", ephemeral=True)
+        return
+
+    # Удаляем информацию о городе и стране
+    remove_user_city(interaction.user.id)
+    await interaction.response.send_message("✅ Ваши данные о городе и стране удалены. Вы больше не будете получать погоду.", ephemeral=True)
 
 # Команда: текущая погода
 @tree.command(name="weather", description="Показать текущую погоду", guild=discord.Object(id=GUILD_ID))
