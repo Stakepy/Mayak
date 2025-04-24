@@ -38,19 +38,40 @@ async def on_ready():
 
     hourly_weather_loop.start()
 
+last_attempt_time = None  # глобальная переменная для антифлуда
+
 async def connect_to_voice():
-    global voice_client
+    global voice_client, last_attempt_time
+
     guild = bot.get_guild(GUILD_ID)
     channel = guild.get_channel(VOICE_CHANNEL_ID)
-    if channel:
-        try:
-            if bot.voice_clients:
-                await bot.voice_clients[0].disconnect(force=True)
-            voice_client = await channel.connect()
-            await asyncio.sleep(1)
-            await play_sound()
-        except Exception as e:
-            print(f"Ошибка при подключении к голосовому каналу: {e}")
+
+    if not channel:
+        print("❌ Канал не найден")
+        return
+
+    now = datetime.datetime.utcnow()
+    if last_attempt_time and (now - last_attempt_time).total_seconds() < 5:
+        print("⚠️ Пропущена попытка подключения (слишком быстро)")
+        return
+    last_attempt_time = now
+
+    try:
+        # если уже подключён к нужному каналу — не переподключаемся
+        if voice_client and voice_client.is_connected():
+            if voice_client.channel.id == VOICE_CHANNEL_ID:
+                print("✅ Уже подключён к нужному каналу.")
+                return
+            else:
+                await voice_client.disconnect(force=True)
+
+        voice_client = await channel.connect()
+        await asyncio.sleep(1)
+        await play_sound()
+
+    except Exception as e:
+        print(f"❌ Ошибка при подключении к голосовому каналу: {e}")
+
 
 async def play_sound():
     global voice_client
@@ -62,9 +83,11 @@ async def play_sound():
 @bot.event
 async def on_voice_state_update(member, before, after):
     if member.id == bot.user.id:
+        # если бот не в нужном канале — переподключаемся
         if after.channel is None or after.channel.id != VOICE_CHANNEL_ID:
-            await asyncio.sleep(1)
+            print("🔄 Бот был перемещён или отключён. Переподключение...")
             await connect_to_voice()
+
 
 # Ограничение: только в указанном текстовом канале
 def is_in_designated_text_channel(interaction: discord.Interaction) -> bool:
